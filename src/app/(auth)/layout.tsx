@@ -3,13 +3,11 @@ import { Metadata } from 'next';
 import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
-    title: 'DompetKu - Kelola Keuanganmu',
-    description: 'Aplikasi pengelolaan keuangan pribadi yang mudah dan praktis',
-    keywords: ['keuangan', 'dompet', 'pengeluaran', 'pemasukan', 'budget'],
-    authors: [{ name: 'DompetKu Team' }],
+    title: 'DompetKu - Login',
+    description: 'Masuk ke akun DompetKu Anda',
 };
 
-export default function DashboardLayout({
+export default function AuthLayout({
     children,
 }: {
     children: React.ReactNode;

@@ -12,6 +12,7 @@ import {
   AddTransactionModal
 } from '@/components/dashboard';
 import Toast from '@/components/dashboard/Toast';
+import AuthGuard from '@/components/auth/AuthGuard';
 import { mockSummary, mockTransactions, mockCategorySpending } from '@/data/mockData';
 
 export default function DashboardPage() {
@@ -47,67 +48,68 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="dashboard">
-      {/* Header */}
-      <Header />
+    <AuthGuard>
+      <div className="dashboard">
+        {/* Header */}
+        <Header />
 
-      {/* Greeting */}
-      <div className="greeting">
-        <h2 className="greeting-title">Halo! 👋</h2>
-        <p className="greeting-subtitle">Kelola keuanganmu dengan tenang</p>
-      </div>
+        {/* Greeting */}
+        <div className="greeting">
+          <h2 className="greeting-title">Halo! 👋</h2>
+          <p className="greeting-subtitle">Kelola keuanganmu dengan tenang</p>
+        </div>
 
-      {/* Balance Card */}
-      <BalanceCard summary={mockSummary} />
+        {/* Balance Card */}
+        <BalanceCard summary={mockSummary} />
 
-      {/* Summary Cards */}
-      <div className="summary-grid">
-        <SummaryCard
-          title="Pemasukan"
-          amount={mockSummary.income}
-          type="income"
-          period="Bulan ini"
+        {/* Summary Cards */}
+        <div className="summary-grid">
+          <SummaryCard
+            title="Pemasukan"
+            amount={mockSummary.income}
+            type="income"
+            period="Bulan ini"
+          />
+          <SummaryCard
+            title="Pengeluaran"
+            amount={mockSummary.expense}
+            type="expense"
+            period="Bulan ini"
+          />
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Category Chart */}
+          <CategoryChart data={mockCategorySpending} />
+
+          {/* Transaction History */}
+          <TransactionHistory
+            transactions={mockTransactions}
+            totalIncome={mockSummary.income}
+            totalExpense={mockSummary.expense}
+          />
+        </div>
+
+        {/* Floating Action Button */}
+        <FloatingActionButton onClick={handleAddTransaction} />
+
+        {/* Add Transaction Modal */}
+        <AddTransactionModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSave={handleSaveTransaction}
         />
-        <SummaryCard
-          title="Pengeluaran"
-          amount={mockSummary.expense}
-          type="expense"
-          period="Bulan ini"
+
+        {/* Toast Notification */}
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          isVisible={showToast}
+          onClose={() => setShowToast(false)}
         />
-      </div>
 
-      {/* Main Content Grid */}
-      <div className="content-grid">
-        {/* Category Chart */}
-        <CategoryChart data={mockCategorySpending} />
-
-        {/* Transaction History */}
-        <TransactionHistory
-          transactions={mockTransactions}
-          totalIncome={mockSummary.income}
-          totalExpense={mockSummary.expense}
-        />
-      </div>
-
-      {/* Floating Action Button */}
-      <FloatingActionButton onClick={handleAddTransaction} />
-
-      {/* Add Transaction Modal */}
-      <AddTransactionModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onSave={handleSaveTransaction}
-      />
-
-      {/* Toast Notification */}
-      <Toast
-        message={toastMessage}
-        type={toastType}
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
-
-      <style jsx>{`
+        <style jsx>{`
         .dashboard {
           animation: fadeIn 0.3s ease;
         }
@@ -174,7 +176,8 @@ export default function DashboardPage() {
              padding-bottom: 80px; /* Space for FAB */
           }
         }
-      `}</style>
-    </div>
+        `}</style>
+      </div>
+    </AuthGuard>
   );
 }
