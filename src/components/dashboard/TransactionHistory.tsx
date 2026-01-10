@@ -1,257 +1,288 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Transaction, TransactionFilter } from '@/types';
-import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, FolderIcon, CoinIcon, TrendingDownIcon } from '@/components/icons';
-import { formatNumber, getMonthName } from '@/utils/format';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
 import TransactionItem from './TransactionItem';
 import FilterDropdown from './FilterDropdown';
+import { Transaction } from '@/types';
+import { useIncome } from '@/hooks/useIncome';
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
-  totalIncome: number;
-  totalExpense: number;
+  totalIncome?: number;
+  totalExpense?: number;
 }
 
 export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   transactions,
-  totalIncome,
-  totalExpense
+  totalIncome = 0,
+  totalExpense = 0
 }) => {
-  const [filter, setFilter] = useState<TransactionFilter>('all');
-  const [currentMonth, setCurrentMonth] = useState(0); // January 2026
-  const [currentYear, setCurrentYear] = useState(2026);
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'all' | 'income' | 'expense'>('all');
+  
+  // Fetch real income data from backend
+  const { data: incomeData, loading: incomeLoading, fetch: fetchIncome } = useIncome();
 
-  const filteredTransactions = transactions.filter(t => {
-    if (filter === 'all') return true;
-    return t.type === filter;
-  });
+  useEffect(() => {
+    // Fetch income data when component mounts or when switching to income tab
+    if (activeTab === 'income') {
+      fetchIncome();
+    }
+  }, [activeTab, fetchIncome]);
 
-  const handlePrevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(currentYear - 1);
+  // Filter transactions based on active tab and limit to 10 latest
+  const filteredTransactions = useMemo(() => {
+    let filtered: any[] = [];
+
+    if (activeTab === 'income') {
+      // Use real backend data for income
+      if (incomeData && incomeData.length > 0) {
+        // Transform income data to Transaction format
+        filtered = incomeData.map((income) => {
+          // Ensure date is in proper format
+          const transactionDate = income.tanggal || new Date().toISOString();
+          
+          return {
+            id: income.id,
+            type: 'income' as const,
+            amount: income.nominal,
+            description: income.nama || income.category?.name || 'Pemasukan',
+            category: {
+              id: income.categoryId || '',
+              name: income.category?.name || 'Pemasukan',
+              icon: income.category?.icon || 'wallet',
+            },
+            date: transactionDate,
+            notes: income.catatan || '',
+            icon: income.category?.icon || 'wallet',
+          };
+        });
+      }
+    } else if (activeTab === 'expense') {
+      filtered = transactions.filter(t => t.type === 'expense');
     } else {
-      setCurrentMonth(currentMonth - 1);
+      // For 'all', combine mock transactions (will be updated later with real expense data)
+      filtered = transactions;
+    }
+
+    // Sort by date (newest first) and limit to 10
+    return filtered
+      .sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        // Handle invalid dates
+        if (isNaN(dateA.getTime())) return 1;
+        if (isNaN(dateB.getTime())) return -1;
+        return dateB.getTime() - dateA.getTime();
+      })
+      .slice(0, 10);
+  }, [transactions, activeTab, incomeData]);
+
+  const handleViewAll = () => {
+    if (activeTab === 'income') {
+      router.push('/transaksi-pemasukan');
+    } else if (activeTab === 'expense') {
+      router.push('/transaksi-pengeluaran');
     }
   };
 
-  const handleNextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
-    }
-  };
-
-  return (
-    <div className="transaction-history card">
-      <div className="history-header">
-        <div className="history-title-section">
+    return (
+      <div className="transaction-history card">
+        <div className="history-header">
           <h3 className="history-title">Riwayat Transaksi</h3>
-          <span className="transaction-count">{filteredTransactions.length} transaksi</span>
+          <FilterDropdown />
         </div>
-        <div className="month-nav">
-          <button className="btn btn-icon btn-ghost" onClick={handlePrevMonth}>
-            <ChevronLeftIcon size={18} />
-          </button>
-          <div className="month-display">
-            <CalendarIcon size={16} />
-            <span>{getMonthName(currentMonth)} {currentYear}</span>
-          </div>
-          <button className="btn btn-icon btn-ghost" onClick={handleNextMonth}>
-            <ChevronRightIcon size={18} />
-          </button>
-        </div>
-      </div>
 
-      <div className="filter-tabs">
-        <button
-          className={`tab ${filter === 'all' ? 'tab-active' : ''}`}
-          onClick={() => setFilter('all')}
-        >
-          <FolderIcon size={16} />
-          Semua
-        </button>
-        <button
-          className={`tab ${filter === 'income' ? 'tab-active' : ''}`}
-          onClick={() => setFilter('income')}
-        >
-          <CoinIcon size={16} />
-          Pemasukan
-        </button>
-        <button
-          className={`tab ${filter === 'expense' ? 'tab-active' : ''}`}
-          onClick={() => setFilter('expense')}
-        >
-          <TrendingDownIcon size={16} />
-          Pengeluaran
-        </button>
-        <FilterDropdown />
-      </div>
-
-      <div className="summary-boxes">
-        <div className="summary-box income">
-          <span className="summary-box-label">Pemasukan</span>
-          <span className="summary-box-amount">+Rp {formatNumber(totalIncome)}</span>
+        <div className="transaction-tabs">
+          <button
+            className={`tab ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveTab('all')}
+          >
+            Semua
+          </button>
+          <button
+            className={`tab ${activeTab === 'income' ? 'active' : ''}`}
+            onClick={() => setActiveTab('income')}
+          >
+            Pemasukan
+          </button>
+          <button
+            className={`tab ${activeTab === 'expense' ? 'active' : ''}`}
+            onClick={() => setActiveTab('expense')}
+          >
+            Pengeluaran
+          </button>
         </div>
-        <div className="summary-box expense">
-          <span className="summary-box-label">Pengeluaran</span>
-          <span className="summary-box-amount">-Rp {formatNumber(totalExpense)}</span>
-        </div>
-      </div>
 
       <div className="transaction-list">
-        {filteredTransactions.map(transaction => (
-          <TransactionItem key={transaction.id} transaction={transaction} />
-        ))}
+        {incomeLoading && activeTab === 'income' ? (
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <span>Memuat data...</span>
+          </div>
+        ) : (
+          <>
+            {filteredTransactions.map(transaction => (
+              <TransactionItem key={transaction.id} transaction={transaction} />
+            ))}
+            
+            {filteredTransactions.length === 0 && (
+              <div className="empty-state">
+                <p>Belum ada transaksi</p>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      <style jsx>{`
-        .transaction-history {
-          background-color: var(--bg-card);
-          border-radius: var(--radius-xl);
-          padding: var(--space-5);
-          box-shadow: var(--shadow);
-          overflow: hidden;
-        }
+        {/* View All Button - only show for income/expense tabs */}
+        {(activeTab === 'income' || activeTab === 'expense') && filteredTransactions.length > 0 && (
+          <div className="view-all-container">
+            <button onClick={handleViewAll} className="view-all-btn">
+              <span>Lihat Semua Transaksi</span>
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        )}
 
-        .history-header {
+        <style jsx>{`
+          .transaction-history {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-xl);
+            padding: var(--space-5);
+            box-shadow: var(--shadow);
+          }
+
+          .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-5);
+          }
+
+          .history-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+          }
+
+          .transaction-tabs {
           display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          margin-bottom: var(--space-4);
-          flex-wrap: wrap;
-          gap: var(--space-3);
-        }
-
-        .history-title-section {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-1);
-        }
-
-        .history-title {
-          font-size: 1rem;
-          font-weight: 600;
-          color: var(--text-primary);
-          margin: 0;
-        }
-
-        .transaction-count {
-          font-size: 0.75rem;
-          color: var(--text-muted);
-        }
-
-        .month-nav {
-          display: flex;
-          align-items: center;
-          gap: var(--space-1);
-          background-color: var(--gray-50);
-          border-radius: var(--radius-full);
-          padding: var(--space-1);
-        }
-
-        .month-display {
-          display: flex;
-          align-items: center;
           gap: var(--space-2);
-          padding: var(--space-2) var(--space-3);
+          margin-bottom: var(--space-5);
+          background: var(--gray-100);
+          padding: var(--space-1);
+          border-radius: var(--radius-xl);
+          width: fit-content;
+        }
+
+        .tab {
+          padding: var(--space-2) var(--space-5);
+          background: none;
+          border: none;
+          color: var(--text-secondary);
           font-size: 0.875rem;
           font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          border-radius: var(--radius-lg);
+        }
+
+        .tab:hover {
           color: var(--text-primary);
         }
 
-        .filter-tabs {
-          display: flex;
-          flex-wrap: wrap;
-          gap: var(--space-2);
-          margin-bottom: var(--space-4);
-          overflow-x: auto;
-        }
-
-        .filter-btn {
-          margin-left: auto;
-        }
-
-        .summary-boxes {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: var(--space-3);
-          margin-bottom: var(--space-4);
-        }
-
-        .summary-box {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-1);
-          padding: var(--space-3);
-          border-radius: var(--radius-lg);
-          border: 1px solid var(--gray-200);
-          transition: all 0.2s ease;
-          cursor: pointer;
-        }
-
-        .summary-box:hover {
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-md);
-        }
-
-        .summary-box.income {
-          border-color: var(--success-light);
-          background-color: rgba(16, 185, 129, 0.05);
-        }
-
-        .summary-box.income:hover {
-          background-color: rgba(16, 185, 129, 0.1);
-        }
-
-        .summary-box.expense {
-          border-color: var(--danger-light);
-          background-color: rgba(239, 68, 68, 0.05);
-        }
-
-        .summary-box.expense:hover {
-          background-color: rgba(239, 68, 68, 0.1);
-        }
-
-        .summary-box-label {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-        }
-
-        .summary-box-amount {
-          font-size: 0.875rem;
+        .tab.active {
+          background: white;
+          color: var(--primary-600);
           font-weight: 600;
-        }
-
-        .summary-box.income .summary-box-amount {
-          color: var(--success);
-        }
-
-        .summary-box.expense .summary-box-amount {
-          color: var(--danger);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .transaction-list {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-3);
           max-height: 400px;
           overflow-y: auto;
-          overflow-x: hidden;
+        }
+
+        .loading-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: var(--space-8);
+          gap: var(--space-3);
+          color: var(--text-muted);
+        }
+
+        .spinner {
+          width: 32px;
+          height: 32px;
+          border: 3px solid var(--gray-200);
+          border-top-color: var(--primary-500);
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: var(--space-8);
+          color: var(--text-muted);
+        }
+
+        .view-all-container {
+          margin-top: var(--space-5);
+          padding-top: var(--space-4);
+          border-top: 1px solid var(--gray-200);
+        }
+
+        .view-all-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: var(--space-2);
+          width: 100%;
+          padding: var(--space-3);
+          background: var(--primary-50);
+          color: var(--primary-600);
+          border: none;
+          border-radius: var(--radius-lg);
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .view-all-btn:hover {
+          background: var(--primary-100);
+          color: var(--primary-700);
         }
 
         @media (max-width: 480px) {
-          .filter-tabs {
+          .transaction-tabs {
             gap: var(--space-1);
+            width: 100%;
           }
-
-          .filter-btn {
-            margin-left: 0;
+          
+          .tab {
+            flex: 1;
+            text-align: center;
+            padding: var(--space-2) var(--space-3);
+            font-size: 0.8125rem;
           }
         }
-      `}</style>
-    </div>
-  );
-};
+        `}</style>
+      </div>
+    );
+  };
 
-export default TransactionHistory;
+  export default TransactionHistory;

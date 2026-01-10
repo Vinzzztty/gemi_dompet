@@ -34,7 +34,12 @@ const getCategoryIcon = (category: CategoryType) => {
 
 export const TransactionItem: React.FC<TransactionItemProps> = ({ transaction }) => {
   const isExpense = transaction.type === 'expense';
-  const category = categories[transaction.category];
+  
+  // Handle both old format (CategoryType) and new format (Category object)
+  const category = typeof transaction.category === 'string' 
+    ? categories[transaction.category]
+    : transaction.category;
+    
   const amountDisplay = isExpense
     ? `-Rp ${formatNumber(transaction.amount)}`
     : `+Rp ${formatNumber(transaction.amount)}`;
@@ -42,12 +47,15 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({ transaction })
   return (
     <div className="transaction-item">
       <div className={`transaction-icon ${transaction.type}`}>
-        {getCategoryIcon(transaction.category)}
+        {typeof transaction.category === 'string' 
+          ? getCategoryIcon(transaction.category)
+          : <CheckIcon size={20} />
+        }
       </div>
       <div className="transaction-details">
         <span className="transaction-description">{transaction.description}</span>
         <span className="transaction-meta">
-          {formatDate(transaction.date)} • <span className="category-badge">{category.name}</span>
+          {formatDate(transaction.date)} • <span className="category-badge">{category?.name}</span>
         </span>
       </div>
       <div className={`transaction-amount ${transaction.type}`}>

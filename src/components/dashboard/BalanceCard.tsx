@@ -1,55 +1,87 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { WalletIcon, TrendingUpIcon, TrendingDownIcon } from '@/components/icons';
-import { formatCurrency } from '@/utils/format';
-import { Summary } from '@/types';
+import React, { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import {
+  WalletIcon,
+  TrendingUpIcon,
+  TrendingDownIcon,
+} from "@/components/icons";
+import { formatCurrency } from "@/utils/format";
+import { Summary } from "@/types";
 
 interface BalanceCardProps {
-    summary: Summary;
+  summary: Summary;
+  onIncomeClick?: () => void;
+  onExpenseClick?: () => void;
 }
 
-export const BalanceCard: React.FC<BalanceCardProps> = ({ summary }) => {
-    return (
-        <div className="balance-card card-gradient">
-            <div className="balance-header">
-                <div className="balance-icon-wrapper">
-                    <WalletIcon size={20} />
-                </div>
-                <div className="balance-label">
-                    <span className="balance-title">Saldo Saat Ini</span>
-                    <span className="balance-period">Bulan ini</span>
-                </div>
-            </div>
+export const BalanceCard: React.FC<BalanceCardProps> = ({ 
+  summary,
+  onIncomeClick,
+  onExpenseClick 
+}) => {
+  const [isBalanceVisible, setIsBalanceVisible] = useState(true);
 
-            <div className="balance-amount">
-                {formatCurrency(summary.balance)}
-            </div>
+  const toggleBalanceVisibility = () => {
+    setIsBalanceVisible(!isBalanceVisible);
+  };
 
-            <div className="balance-breakdown">
-                <div className="breakdown-card">
-                    <div className="breakdown-header">
-                        <TrendingUpIcon size={16} />
-                        <span>Pemasukan</span>
-                    </div>
-                    <div className="breakdown-amount">
-                        {formatCurrency(summary.income)}
-                    </div>
-                </div>
-                <div className="breakdown-card">
-                    <div className="breakdown-header">
-                        <TrendingDownIcon size={16} />
-                        <span>Pengeluaran</span>
-                    </div>
-                    <div className="breakdown-amount">
-                        {formatCurrency(summary.expense)}
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="balance-card card-gradient">
+      <div className="balance-header">
+        <div className="balance-icon-wrapper">
+          <WalletIcon size={20} />
+        </div>
+        <div className="balance-label">
+          <span className="balance-title">Saldo Saat Ini</span>
+          <span className="balance-period">Bulan ini</span>
+        </div>
+      </div>
 
-            <style jsx>{`
+      <div className="balance-amount">
+        {isBalanceVisible ? formatCurrency(summary.balance) : "Rp •••••••"}
+        <button
+          onClick={toggleBalanceVisibility}
+          className="eye-toggle-btn"
+          aria-label={
+            isBalanceVisible ? "Sembunyikan saldo" : "Tampilkan saldo"
+          }
+        >
+          {isBalanceVisible ? <Eye size={35} /> : <EyeOff size={35} />}
+        </button>
+      </div>
+
+      <div className="balance-breakdown">
+        <div 
+          className={`breakdown-card ${onIncomeClick ? 'clickable' : ''}`}
+          onClick={onIncomeClick}
+        >
+          <div className="breakdown-header">
+            <TrendingUpIcon size={16} />
+            <span>Pemasukan</span>
+          </div>
+          <div className="breakdown-amount">
+            {formatCurrency(summary.income)}
+          </div>
+        </div>
+        <div 
+          className={`breakdown-card ${onExpenseClick ? 'clickable' : ''}`}
+          onClick={onExpenseClick}
+        >
+          <div className="breakdown-header">
+            <TrendingDownIcon size={16} />
+            <span>Pengeluaran</span>
+          </div>
+          <div className="breakdown-amount">
+            {formatCurrency(summary.expense)}
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
         .balance-card {
-          background: linear-gradient(135deg, #4A90E2 0%, #3B7DD8 100%);
+          background: linear-gradient(135deg, #4a90e2 0%, #3b7dd8 100%);
           border-radius: var(--radius-2xl);
           padding: var(--space-6);
           color: white;
@@ -107,6 +139,17 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({ summary }) => {
           backdrop-filter: blur(10px);
           border-radius: var(--radius-xl);
           padding: var(--space-4);
+          transition: all 0.3s ease;
+        }
+
+        .breakdown-card.clickable {
+          cursor: pointer;
+        }
+
+        .breakdown-card.clickable:hover {
+          background-color: rgba(255, 255, 255, 0.2);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .breakdown-header {
@@ -132,9 +175,18 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({ summary }) => {
             font-size: 1rem;
           }
         }
+
+        .eye-toggle-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          margin-left: var(--space-3);
+          vertical-align: middle;
+          color: white;
+        }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default BalanceCard;

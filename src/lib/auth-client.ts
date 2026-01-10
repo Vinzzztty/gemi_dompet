@@ -1,16 +1,34 @@
 /**
  * Logout utility function
- * Clears authentication data from localStorage and redirects to login
+ * Clears authentication data from localStorage.
  */
 export function logout() {
+    clearAuthData();
+    // No redirect here, components should handle navigation after logout
+}
+
+/**
+ * Clears authentication data (token and user) from localStorage.
+ */
+export function clearAuthData() {
     if (typeof window !== 'undefined') {
-        // Clear auth data
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        
-        // Redirect to login
-        window.location.href = '/login';
     }
+}
+
+/**
+ * Handles authentication errors, specifically 401 Unauthorized.
+ * Clears invalid/expired token and logs a warning.
+ * @param error The error object, potentially from an API response.
+ */
+export function handleAuthError(error: any): void {
+  if (error.response?.status === 401) {
+    // Clear invalid/expired token
+    clearAuthData();
+    // Don't auto-redirect - let components handle it
+    console.warn('Auth error - token cleared. Please login again.');
+  }
 }
 
 /**

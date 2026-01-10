@@ -62,7 +62,7 @@ export default function DashboardPage() {
         {/* Balance Card */}
         <BalanceCard summary={mockSummary} />
 
-        {/* Summary Cards */}
+        {/* Summary Cards
         <div className="summary-grid">
           <SummaryCard
             title="Pemasukan"
@@ -76,7 +76,7 @@ export default function DashboardPage() {
             type="expense"
             period="Bulan ini"
           />
-        </div>
+        </div> */}
 
         {/* Main Content Grid */}
         <div className="content-grid">

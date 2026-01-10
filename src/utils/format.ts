@@ -18,14 +18,26 @@ export function formatNumber(amount: number): string {
 }
 
 /**
- * Format date to Indonesian locale
+ * Format date to localized string
  */
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | string): string {
+    // Handle invalid dates
+    if (!date) return '-';
+    
+    // Convert string to Date if needed
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+        console.error('Invalid date:', date);
+        return '-';
+    }
+    
     return new Intl.DateTimeFormat('id-ID', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
-    }).format(date);
+    }).format(dateObj);
 }
 
 /**
