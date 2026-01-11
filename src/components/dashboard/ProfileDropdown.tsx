@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { getCurrentUser, logout } from '@/lib/auth-client';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export function ProfileDropdown() {
+    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
     const [user, setUser] = useState<{ fullName: string; email: string } | null>(null);
@@ -42,6 +44,7 @@ export function ProfileDropdown() {
         toast.success('Logout berhasil. Sampai jumpa!');
         setTimeout(() => {
             logout();
+            router.push('/login');
         }, 1000);
     };
 

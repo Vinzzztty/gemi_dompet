@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loading } from '../ui/loading';
 
 interface AuthGuardProps {
     children: React.ReactNode;
@@ -25,17 +26,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     // Don't render children if not authenticated
     if (!token) {
-        return (
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '100vh',
-                color: 'var(--text-secondary)'
-            }}>
-                <p>Redirecting to login...</p>
-            </div>
-        );
+        return <Loading fullScreen />;
     }
 
     return <>{children}</>;

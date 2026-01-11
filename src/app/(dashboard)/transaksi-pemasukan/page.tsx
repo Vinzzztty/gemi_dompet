@@ -3,15 +3,25 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { useIncome } from '@/hooks/useIncome';
 import { formatCurrency } from '@/utils/format';
 import { IncomeTable, IncomeMonthFilter } from '@/components/income';
+import { EditIncomeModal } from '@/components/income/EditIncomeModal';
+import { DeleteConfirmDialog } from '@/components/ui/DeleteConfirmDialog';
+import type { IncomeTransaction } from '@/types/income';
 
 export default function IncomePage() {
   const router = useRouter();
-  const { data: transactions, loading, totalIncome, fetch } = useIncome();
+  const { data: transactions, loading, remove, fetch } = useIncome();
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  
+  // Edit/Delete state
+  const [editTransaction, setEditTransaction] = useState<IncomeTransaction | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteName, setDeleteName] = useState<string>('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch();
@@ -24,7 +34,7 @@ export default function IncomePage() {
     return transactions.filter((transaction) => {
       const date = new Date(transaction.tanggal);
       const transactionYear = date.getFullYear();
-      const transactionMonth = date.getMonth() + 1; //  months are 0-indexed
+      const transactionMonth = date.getMonth() + 1;
 
       // Filter by year
       if (transactionYear !== selectedYear) return false;
@@ -43,6 +53,47 @@ export default function IncomePage() {
 
   const handleBack = () => {
     router.push('/');
+  };
+
+  // CRUD Handlers
+  const handleEdit = (transaction: IncomeTransaction) => {
+    setEditTransaction(transaction);
+  };
+
+  const handleDelete = (id: string) => {
+    const transaction = transactions?.find(t => t.id === id);
+    if (transaction) {
+      setDeleteId(id);
+      setDeleteName(transaction.nama || 'transaksi ini');
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+
+    setDeleting(true);
+    const result = await remove(deleteId);
+    setDeleting(false);
+
+    if (result) {
+      // Close dialog
+      setDeleteId(null);
+      setDeleteName('');
+      
+      // Show success toast
+      toast.success('Pemasukan berhasil dihapus');
+      
+      // Refresh list
+      fetch();
+    }
+  };
+
+  const handleEditSuccess = () => {
+    // Show success toast
+    toast.success('Pemasukan berhasil diperbarui');
+    
+    // Refresh list
+    fetch();
   };
 
   return (
@@ -80,7 +131,29 @@ export default function IncomePage() {
       />
 
       {/* Transactions Table */}
-      <IncomeTable data={filteredTransactions} loading={loading} />
+      <IncomeTable 
+        data={filteredTransactions} 
+        loading={loading}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      {/* Edit Modal */}
+      <EditIncomeModal
+        isOpen={!!editTransaction}
+        onClose={() => setEditTransaction(null)}
+        transaction={editTransaction}
+        onSuccess={handleEditSuccess}
+      />
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+        itemName={deleteName}
+        loading={deleting}
+      />
 
       <style jsx>{`
         .income-page {

@@ -39,7 +39,7 @@ export class ExpenseService extends TransactionService<
    * Update expense
    */
   async update(id: string, data: UpdateExpenseRequest) {
-    return this.updateTransaction(id, data);
+    return super.update(id, data);
   }
 }
 

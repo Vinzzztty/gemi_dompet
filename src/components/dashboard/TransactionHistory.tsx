@@ -102,12 +102,11 @@ export const TransactionHistory: React.FC = () => {
 
   return (
     <div className="transaction-history">
-      <div className="header">
-        <h2>Riwayat Transaksi</h2>
-      </div>
-
+<div className="history-header">
+  <h2 className="history-title">Riwayat Transaksi</h2>
+</div>
       {/* Tabs */}
-      <div className="tabs">
+      <div className="transaction-tabs">
         <button
           className={`tab ${activeTab === 'all' ? 'active' : ''}`}
           onClick={() => setActiveTab('all')}
@@ -183,7 +182,7 @@ export const TransactionHistory: React.FC = () => {
           .transaction-tabs {
           display: flex;
           gap: var(--space-2);
-          margin-bottom: var(--space-5);
+          margin-bottom: 1.75rem;
           background: var(--gray-100);
           padding: var(--space-1);
           border-radius: var(--radius-xl);

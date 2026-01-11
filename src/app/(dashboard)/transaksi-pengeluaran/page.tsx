@@ -3,15 +3,25 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { useExpense } from '@/hooks/useExpense';
 import { formatCurrency } from '@/utils/format';
-import { IncomeTable, IncomeMonthFilter } from '@/components/income';
+import { IncomeMonthFilter } from '@/components/income';
+import { ExpenseTable, EditExpenseModal } from '@/components/expense';
+import { DeleteConfirmDialog } from '@/components/ui/DeleteConfirmDialog';
+import type { ExpenseTransaction } from '@/types/expense';
 
 export default function TransaksiPengeluaranPage() {
   const router = useRouter();
-  const { data: transactions, loading, totalExpense, fetch } = useExpense();
+  const { data: transactions, loading, remove, fetch } = useExpense();
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  
+  // Edit/Delete state
+  const [editTransaction, setEditTransaction] = useState<ExpenseTransaction | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteName, setDeleteName] = useState<string>('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch();
@@ -43,6 +53,47 @@ export default function TransaksiPengeluaranPage() {
 
   const handleBack = () => {
     router.push('/');
+  };
+
+  // CRUD Handlers
+  const handleEdit = (transaction: ExpenseTransaction) => {
+    setEditTransaction(transaction);
+  };
+
+  const handleDelete = (id: string) => {
+    const transaction = transactions?.find(t => t.id === id);
+    if (transaction) {
+      setDeleteId(id);
+      setDeleteName(transaction.nama || 'transaksi ini');
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+
+    setDeleting(true);
+    const result = await remove(deleteId);
+    setDeleting(false);
+
+    if (result) {
+      // Close dialog
+      setDeleteId(null);
+      setDeleteName('');
+      
+      // Show success toast
+      toast.success('Pengeluaran berhasil dihapus');
+      
+      // Refresh list
+      fetch();
+    }
+  };
+
+  const handleEditSuccess = () => {
+    // Show success toast
+    toast.success('Pengeluaran berhasil diperbarui');
+    
+    // Refresh list
+    fetch();
   };
 
   return (
@@ -79,7 +130,29 @@ export default function TransaksiPengeluaranPage() {
       />
 
       {/* Transactions Table */}
-      <IncomeTable data={filteredTransactions} loading={loading} />
+      <ExpenseTable 
+        data={filteredTransactions} 
+        loading={loading}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      {/* Edit Modal */}
+      <EditExpenseModal
+        isOpen={!!editTransaction}
+        onClose={() => setEditTransaction(null)}
+        transaction={editTransaction}
+        onSuccess={handleEditSuccess}
+      />
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+        itemName={deleteName}
+        loading={deleting}
+      />
 
       <style jsx>{`
         .expense-page {

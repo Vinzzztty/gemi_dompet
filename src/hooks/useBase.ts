@@ -125,6 +125,7 @@ export function useBase<T, CreateDTO = T, UpdateDTO = Partial<T>>(
       setError(null);
       try {
         const response: ApiResponse<T> = await service.update(id, updateData);
+        
         if (response.success && response.data) {
           // Update item in the list
           setData((prev) =>
@@ -132,6 +133,7 @@ export function useBase<T, CreateDTO = T, UpdateDTO = Partial<T>>(
           );
           return response.data;
         }
+        
         setError(response.error || 'Failed to update item');
         return null;
       } catch (err: any) {

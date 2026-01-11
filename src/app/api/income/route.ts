@@ -43,6 +43,8 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
+              icon: true,  // Added for consistency with expense
+              type: true,  // Added for consistency with expense
             },
           },
         },
@@ -86,9 +88,19 @@ export async function POST(request: NextRequest) {
   return withAuth(request, async (req: AuthenticatedRequest) => {
     try {
       const body = await req.json();
-      const { nominal, categoryId, tanggal, catatan } = body;
+      const { nama, nominal, categoryId, tanggal, catatan } = body;
 
       // Validation
+      if (!nama || nama.trim() === '') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Validation error',
+            message: 'Nama transaksi harus diisi',
+          },
+          { status: 400 }
+        );
+      }
       if (!nominal || nominal <= 0) {
         return NextResponse.json(
           {
@@ -178,16 +190,19 @@ export async function POST(request: NextRequest) {
       const incomeTransaction = await prisma.incomeTransaction.create({
         data: {
           userId: req.userId!,
+          nama: nama.trim(),
           nominal,
           categoryId,
           tanggal: parsedDate,
-          catatan: catatan || null,
+          catatan: catatan?.trim() || null,
         },
         include: {
           category: {
             select: {
               id: true,
               name: true,
+              icon: true,  // Added for consistency with expense
+              type: true,  // Added for consistency with expense
             },
           },
         },

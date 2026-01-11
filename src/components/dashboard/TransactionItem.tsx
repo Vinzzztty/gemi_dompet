@@ -99,8 +99,8 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({ transaction })
         }
 
         .transaction-icon.expense {
-          background-color: var(--primary-100);
-          color: var(--primary-600);
+          background-color: var(--danger-light);
+          color: var(--danger);
         }
 
         .transaction-icon.income {

@@ -5,17 +5,17 @@ import Lottie from 'lottie-react';
 import { FileText, Edit2, Trash2 } from 'lucide-react';
 import { FontAwesomeIconDisplay } from '@/components/ui/FontAwesomeIconDisplay';
 import { formatCurrency } from '@/utils/format';
-import { Income } from '@/types/income';
+import { ExpenseTransaction } from '@/types/expense';
 import searchingAnimation from '../../../public/animations/Searching.json';
 
-interface IncomeTableProps {
-  data: Income[];
+interface ExpenseTableProps {
+  data: ExpenseTransaction[];
   loading?: boolean;
-  onEdit?: (transaction: Income) => void;
+  onEdit?: (transaction: ExpenseTransaction) => void;
   onDelete?: (id: string) => void;
 }
 
-export const IncomeTable: React.FC<IncomeTableProps> = ({
+export const ExpenseTable: React.FC<ExpenseTableProps> = ({
   data,
   loading = false,
   onEdit,
@@ -32,13 +32,13 @@ export const IncomeTable: React.FC<IncomeTableProps> = ({
 
   if (loading) {
     return (
-      <div className="income-table-container">
+      <div className="expense-table-container">
         <div className="loading-state">
           <div className="spinner"></div>
           <p>Memuat data...</p>
         </div>
         <style jsx>{`
-          .income-table-container {
+          .expense-table-container {
             background: white;
             border-radius: var(--radius-2xl);
             padding: var(--space-6);
@@ -50,50 +50,53 @@ export const IncomeTable: React.FC<IncomeTableProps> = ({
             align-items: center;
             justify-content: center;
             padding: var(--space-12);
-            color: var(--text-muted);
+            color: var(--text-secondary);
           }
           .spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid var(--gray-200);
-            border-top-color: #4a90e2;
+            border: 3px solid var(--border-color);
+            border-top-color: #dc2626;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin-bottom: var(--space-4);
           }
           @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+              transform: rotate(360deg);
+            }
           }
         `}</style>
       </div>
     );
   }
 
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     return (
-      <div className="income-table-container">
+      <div className="expense-table-container">
         <div className="empty-state">
-          <div className="empty-icon">
-            <Lottie 
-              animationData={searchingAnimation} 
-              loop={true}
-              style={{ width: 200, height: 200 }}
-            />
-          </div>
-          <h3>Belum ada transaksi</h3>
-          <p>Transaksi pemasukan akan muncul di sini</p>
+          <div className="empty-icon"><Lottie 
+                        animationData={searchingAnimation} 
+                        loop={true}
+                        style={{ width: 200, height: 200 }}
+                      /></div>
+          <h3>Belum Ada Pengeluaran</h3>
+          <p>Transaksi pengeluaran akan muncul di sini</p>
         </div>
         <style jsx>{`
-          .income-table-container {
+          .expense-table-container {
             background: white;
             border-radius: var(--radius-2xl);
             padding: var(--space-6);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           }
           .empty-state {
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             padding: var(--space-12);
-            color: var(--text-muted);
+            text-align: center;
           }
           .empty-icon {
             display: flex;
@@ -102,13 +105,14 @@ export const IncomeTable: React.FC<IncomeTableProps> = ({
             margin-bottom: var(--space-2);
           }
           .empty-state h3 {
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             font-weight: 600;
             color: var(--text-primary);
             margin: 0 0 var(--space-2) 0;
           }
           .empty-state p {
             font-size: 0.875rem;
+            color: var(--text-secondary);
             margin: 0;
           }
         `}</style>
@@ -117,18 +121,17 @@ export const IncomeTable: React.FC<IncomeTableProps> = ({
   }
 
   return (
-    <div className="income-table-container">
+    <div className="expense-table-container">
       <div className="table-wrapper">
-        <table className="income-table">
+        <table className="expense-table">
           <thead>
             <tr>
               <th>Tanggal</th>
-                            <th>Kategori</th>
+              <th>Kategori</th>
               <th>Nama</th>
-
-              <th>Nominal</th>
               <th>Catatan</th>
-              {(onEdit || onDelete) && <th>Aksi</th>}
+              <th className="text-right">Nominal</th>
+              {(onEdit || onDelete) && <th className="text-center">Aksi</th>}
             </tr>
           </thead>
           <tbody>
@@ -139,37 +142,31 @@ export const IncomeTable: React.FC<IncomeTableProps> = ({
                     <span>{formatDate(transaction.tanggal)}</span>
                   </div>
                 </td>
-                                <td>
+                <td>
                   <div className="category-cell">
-                    <div className="category-icon">
-                      <FontAwesomeIconDisplay
-                        iconName={transaction.category?.icon || 'wallet'}
-                        size="sm"
-                      />
-                    </div>
-                    <span>{transaction.category?.name || 'Tidak ada kategori'}</span>
-                  </div>
-                </td>
-                <td>
-                  <div className="nama-cell">
-                    {transaction.nama || transaction.category?.name || '-'}
-                  </div>
-                </td>
-
-                <td>
-                  <span>{formatCurrency(transaction.nominal)}</span>
-                </td>
-                <td>
-                  <div className="notes-cell">
-                    {transaction.catatan ? (
-                      <>
-                        <FileText size={14} />
-                        <span>{transaction.catatan}</span>
-                      </>
-                    ) : (
-                      <span className="no-notes">-</span>
+                    {transaction.category?.icon && (
+                      <div className="category-icon">
+                        <FontAwesomeIconDisplay iconName={transaction.category.icon} />
+                      </div>
                     )}
+                    <span>{transaction.category?.name || 'Tanpa Kategori'}</span>
                   </div>
+                </td>
+                <td>
+                  <span className="transaction-name">{transaction.nama}</span>
+                </td>
+                <td>
+                  {transaction.catatan ? (
+                    <div className="notes-cell">
+                      <FileText size={14} />
+                      <span>{transaction.catatan}</span>
+                    </div>
+                  ) : (
+                    <span className="no-notes">-</span>
+                  )}
+                </td>
+                <td className="text-right">
+                  <span className="amount expense">{formatCurrency(transaction.nominal)}</span>
                 </td>
                 {(onEdit || onDelete) && (
                   <td>
@@ -202,116 +199,143 @@ export const IncomeTable: React.FC<IncomeTableProps> = ({
       </div>
 
       <style jsx>{`
-        .income-table-container {
+        .expense-table-container {
           background: white;
           border-radius: var(--radius-2xl);
           padding: var(--space-6);
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          animation: fadeIn 0.3s ease;
         }
 
         .table-wrapper {
           overflow-x: auto;
         }
 
-        .income-table {
+        .expense-table {
           width: 100%;
           border-collapse: collapse;
         }
 
-        .income-table thead th {
-          background: var(--gray-50);
-          padding: var(--space-4);
+        .expense-table thead {
+          border-bottom: 2px solid var(--border-color);
+        }
+
+        .expense-table th {
+          padding: var(--space-3) var(--space-4);
           text-align: left;
+          font-size: 0.813rem;
           font-weight: 600;
-          color: var(--text-primary);
-          font-size: 0.875rem;
-        }
-
-        tbody td {
-          padding: var(--space-4);
-          border-top: 1px solid var(--gray-100);
           color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .expense-table th.text-right,
+        .expense-table td.text-right {
+          text-align: right;
+        }
+
+        .expense-table th.text-center {
+          text-align: center;
+        }
+
+        .expense-table tbody tr {
+          border-bottom: 1px solid var(--border-color);
+          transition: background-color 0.2s;
+        }
+
+        .expense-table tbody tr:hover {
+          background-color: var(--background-secondary);
+        }
+
+        .expense-table tbody tr:last-child {
+          border-bottom: none;
+        }
+
+        .expense-table td {
+          padding: var(--space-4);
           font-size: 0.875rem;
-        }
-
-        tbody tr:hover {
-          background: var(--gray-50);
-        }
-
-        .nama-cell {
-          font-weight: 600;
           color: var(--text-primary);
+        }
+
+        .date-cell {
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+          color: var(--text-secondary);
+        }
+
+        .category-cell {
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+        }
+
+        .category-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: var(--radius-lg);
+          background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #dc2626;
+          flex-shrink: 0;
+        }
+
+        .transaction-name {
+          font-weight: 500;
+          color: var(--text-primary);
+        }
+
+        .notes-cell {
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+          color: var(--text-secondary);
+          font-size: 0.813rem;
+        }
+
+        .notes-cell span {
           max-width: 200px;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
 
+        .no-notes {
+          color: var(--text-tertiary);
+        }
+
         .amount {
           font-weight: 600;
-          color: var(--success);
+          font-size: 0.938rem;
         }
 
-        .notes {
-          color: var(--text-muted);
-          max-width: 250px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .category-cell {
-          display: flex;
-          align-items: center;
-          gap: var(--space-3);
-        }
-
-        .category-icon {
-          width: 32px;
-          height: 32px;
-          background: #10b98110;
-          border-radius: var(--radius-lg);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #4a90e2;
-          flex-shrink: 0;
-        }
-
-        
-        .notes-cell {
-          display: flex;
-          align-items: center;
-          gap: var(--space-2);
-          color: var(--text-secondary);
-          max-width: 300px;
-        }
-
-        .notes-cell span {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .no-notes {
-          color: var(--text-muted);
+        .amount.expense {
+          color: #dc2626;
         }
 
         .action-buttons {
           display: flex;
           gap: var(--space-2);
+          justify-content: center;
         }
 
         .action-btn {
           padding: var(--space-2);
           border: none;
+          border-radius: var(--radius-lg);
           background: transparent;
           cursor: pointer;
-          border-radius: var(--radius-md);
           transition: all 0.2s;
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+
+        .action-btn:hover {
+          background: var(--background-secondary);
         }
 
         .edit-btn {
@@ -319,43 +343,47 @@ export const IncomeTable: React.FC<IncomeTableProps> = ({
         }
 
         .edit-btn:hover {
-          background: var(--primary-50);
+          background: rgba(59, 130, 246, 0.1);
         }
 
         .delete-btn {
-          color: #ef4444;
+          color: #dc2626;
         }
 
         .delete-btn:hover {
-          background: #fef2f2;
+          background: rgba(220, 38, 38, 0.1);
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
 
         @media (max-width: 768px) {
-          .income-table-container {
+          .expense-table-container {
             padding: var(--space-4);
           }
 
-          .table-wrapper {
-            overflow-x: scroll;
-            -webkit-overflow-scrolling: touch;
-          }
-
-          .income-table {
-            min-width: 600px;
-          }
-
-          .income-table thead th,
-          .income-table tbody td {
+          .expense-table th,
+          .expense-table td {
             padding: var(--space-3);
+            font-size: 0.813rem;
           }
 
-         .notes-cell {
-            max-width: 150px;
+          .category-icon {
+            width: 28px;
+            height: 28px;
+          }
+
+          .notes-cell span {
+            max-width: 100px;
           }
         }
       `}</style>
     </div>
   );
 };
-
-export default IncomeTable;
