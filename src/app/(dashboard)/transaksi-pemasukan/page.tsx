@@ -55,6 +55,7 @@ export default function IncomePage() {
         </button>
         <h1 className="page-title">Daftar Pemasukan</h1>
       </div>
+      
 
       {/* Summary Card */}
       <div className="summary-card">

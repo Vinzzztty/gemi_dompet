@@ -84,11 +84,7 @@ export default function DashboardPage() {
           <CategoryChart data={mockCategorySpending} />
 
           {/* Transaction History */}
-          <TransactionHistory
-            transactions={mockTransactions}
-            totalIncome={mockSummary.income}
-            totalExpense={mockSummary.expense}
-          />
+          <TransactionHistory />
         </div>
 
         {/* Floating Action Button */}
@@ -98,7 +94,6 @@ export default function DashboardPage() {
         <AddTransactionModal
           isOpen={isModalOpen}
           onClose={handleCloseModal}
-          onSave={handleSaveTransaction}
         />
 
         {/* Toast Notification */}

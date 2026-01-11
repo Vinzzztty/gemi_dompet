@@ -24,7 +24,8 @@ model UserAccount {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp()
 
-  incomeTransactions IncomeTransaction[]
+  incomeTransactions  IncomeTransaction[]
+  expenseTransactions ExpenseTransaction[]
 
   @@map("user_account")
   @@index([email], name: "idx_user_account_email")
@@ -37,7 +38,8 @@ model Category {
   icon      String?      @db.VarChar(50) @default("wallet")
   createdAt DateTime     @default(now()) @map("created_at") @db.Timestamp()
 
-  incomeTransactions IncomeTransaction[]
+  incomeTransactions  IncomeTransaction[]
+  expenseTransactions ExpenseTransaction[]
 
   @@unique([name, type], name: "name_type")
   @@map("category")
@@ -61,4 +63,23 @@ model IncomeTransaction {
   @@index([userId], name: "idx_income_user_id")
   @@index([categoryId], name: "idx_income_category_id")
   @@index([tanggal], name: "idx_income_tanggal")
+}
+
+model ExpenseTransaction {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  nama        String?  @db.VarChar(255)
+  nominal     Decimal  @db.Decimal(15, 2)
+  categoryId  String   @map("category_id") @db.Uuid
+  tanggal     DateTime @db.Date
+  catatan     String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  user     UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@map("expense_transaction")
+  @@index([userId], name: "idx_expense_user_id")
+  @@index([categoryId], name: "idx_expense_category_id")
+  @@index([tanggal], name: "idx_expense_tanggal")
 }

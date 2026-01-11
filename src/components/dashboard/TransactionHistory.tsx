@@ -7,68 +7,77 @@ import TransactionItem from './TransactionItem';
 import FilterDropdown from './FilterDropdown';
 import { Transaction } from '@/types';
 import { useIncome } from '@/hooks/useIncome';
+import { useExpense } from '@/hooks/useExpense';
 
-interface TransactionHistoryProps {
-  transactions: Transaction[];
-  totalIncome?: number;
-  totalExpense?: number;
-}
-
-export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
-  transactions,
-  totalIncome = 0,
-  totalExpense = 0
-}) => {
+export const TransactionHistory: React.FC = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'all' | 'income' | 'expense'>('all');
   
-  // Fetch real income data from backend
-  const { data: incomeData, loading: incomeLoading, fetch: fetchIncome } = useIncome();
+  // Fetch income and expense data
+  const { data: incomeData, loading: loadingIncome, fetch: fetchIncome } = useIncome();
+  const { data: expenseData, loading: loadingExpense, fetch: fetchExpense } = useExpense();
 
   useEffect(() => {
-    // Fetch income data when component mounts or when switching to income tab
-    if (activeTab === 'income') {
-      fetchIncome();
-    }
-  }, [activeTab, fetchIncome]);
+    fetchIncome();
+    fetchExpense();
+  }, [fetchIncome, fetchExpense]);
 
   // Filter transactions based on active tab and limit to 10 latest
-  const filteredTransactions = useMemo(() => {
-    let filtered: any[] = [];
+  // Transform income data to Transaction format
+  const incomeTransactions: Transaction[] = useMemo(() => {
+    if (!incomeData || incomeData.length === 0) return [];
 
-    if (activeTab === 'income') {
-      // Use real backend data for income
-      if (incomeData && incomeData.length > 0) {
-        // Transform income data to Transaction format
-        filtered = incomeData.map((income) => {
-          // Ensure date is in proper format
-          const transactionDate = income.tanggal || new Date().toISOString();
-          
-          return {
-            id: income.id,
-            type: 'income' as const,
-            amount: income.nominal,
-            description: income.nama || income.category?.name || 'Pemasukan',
-            category: {
-              id: income.categoryId || '',
-              name: income.category?.name || 'Pemasukan',
-              icon: income.category?.icon || 'wallet',
-            },
-            date: transactionDate,
-            notes: income.catatan || '',
-            icon: income.category?.icon || 'wallet',
-          };
-        });
-      }
+    return incomeData.map((income) => {
+      // Safely access the transaction date
+      const transactionDate = income.tanggal || new Date().toISOString();
+      
+      return {
+        id: income.id,
+        type: 'income' as const,
+        amount: income.nominal,
+        description: income.nama || income.category?.name || 'Pemasukan',
+        category: income.category?.name as any,
+        date: transactionDate,
+        notes: income.catatan || '',
+        icon: income.category?.icon || 'wallet',
+      } as unknown as Transaction;
+    });
+  }, [incomeData]);
+
+  // Transform expense data to Transaction format
+  const expenseTransactions: Transaction[] = useMemo(() => {
+    if (!expenseData || expenseData.length === 0) return [];
+
+    return expenseData.map((expense) => {
+      const transactionDate = expense.tanggal || new Date().toISOString();
+      
+      return {
+        id: expense.id,
+        type: 'expense' as const,
+        amount: expense.nominal,
+        description: expense.nama || expense.category?.name || 'Pengeluaran',
+        category: expense.category?.name as any,
+        date: transactionDate,
+        notes: expense.catatan || '',
+        icon: expense.category?.icon || 'wallet',
+      } as unknown as Transaction;
+    });
+  }, [expenseData]);
+
+  // Combine and filter transactions
+  const filteredTransactions = useMemo(() => {
+    let transactions: Transaction[] = [];
+
+    if (activeTab === 'all') {
+      transactions = [...incomeTransactions, ...expenseTransactions];
+    } else if (activeTab === 'income') {
+      transactions = incomeTransactions;
     } else if (activeTab === 'expense') {
-      filtered = transactions.filter(t => t.type === 'expense');
-    } else {
-      // For 'all', combine mock transactions (will be updated later with real expense data)
-      filtered = transactions;
+      transactions = expenseTransactions;
     }
 
     // Sort by date (newest first) and limit to 10
-    return filtered
+    return transactions
       .sort((a, b) => {
         const dateA = new Date(a.date);
         const dateB = new Date(b.date);
@@ -78,7 +87,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
         return dateB.getTime() - dateA.getTime();
       })
       .slice(0, 10);
-  }, [transactions, activeTab, incomeData]);
+  }, [activeTab, incomeTransactions, expenseTransactions]);
 
   const handleViewAll = () => {
     if (activeTab === 'income') {
@@ -88,51 +97,53 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     }
   };
 
-    return (
-      <div className="transaction-history card">
-        <div className="history-header">
-          <h3 className="history-title">Riwayat Transaksi</h3>
-          <FilterDropdown />
-        </div>
+  // Loading state
+  const isLoading = loadingIncome || loadingExpense;
 
-        <div className="transaction-tabs">
-          <button
-            className={`tab ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveTab('all')}
-          >
-            Semua
-          </button>
-          <button
-            className={`tab ${activeTab === 'income' ? 'active' : ''}`}
-            onClick={() => setActiveTab('income')}
-          >
-            Pemasukan
-          </button>
-          <button
-            className={`tab ${activeTab === 'expense' ? 'active' : ''}`}
-            onClick={() => setActiveTab('expense')}
-          >
-            Pengeluaran
-          </button>
-        </div>
+  return (
+    <div className="transaction-history">
+      <div className="header">
+        <h2>Riwayat Transaksi</h2>
+      </div>
 
+      {/* Tabs */}
+      <div className="tabs">
+        <button
+          className={`tab ${activeTab === 'all' ? 'active' : ''}`}
+          onClick={() => setActiveTab('all')}
+        >
+          Semua
+        </button>
+        <button
+          className={`tab ${activeTab === 'income' ? 'active' : ''}`}
+          onClick={() => setActiveTab('income')}
+        >
+          Pemasukan
+        </button>
+        <button
+          className={`tab ${activeTab === 'expense' ? 'active' : ''}`}
+          onClick={() => setActiveTab('expense')}
+        >
+          Pengeluaran
+        </button>
+      </div>
+
+      {/* Transaction List */}
       <div className="transaction-list">
-        {incomeLoading && activeTab === 'income' ? (
+        {isLoading ? (
           <div className="loading-state">
             <div className="spinner"></div>
-            <span>Memuat data...</span>
+            <p>Memuat transaksi...</p>
+          </div>
+        ) : filteredTransactions.length === 0 ? (
+          <div className="empty-state">
+            <p>Belum ada transaksi</p>
           </div>
         ) : (
           <>
             {filteredTransactions.map(transaction => (
               <TransactionItem key={transaction.id} transaction={transaction} />
             ))}
-            
-            {filteredTransactions.length === 0 && (
-              <div className="empty-state">
-                <p>Belum ada transaksi</p>
-              </div>
-            )}
           </>
         )}
       </div>

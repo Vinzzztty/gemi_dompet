@@ -5,6 +5,7 @@ import { Loader2, Calendar, DollarSign, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useCategory } from "@/hooks/useCategory";
 import { useIncome } from "@/hooks/useIncome";
+import type { CreateIncomeRequest } from "@/types/income";
 
 interface IncomeFormProps {
   onSubmit: (data: CreateIncomeRequest) => void;

@@ -8,6 +8,7 @@ import {
 import { CategoryType } from '@/types';
 import { useCategory } from '@/hooks/useCategory';
 import { useIncome } from '@/hooks/useIncome';
+import { useExpense } from '@/hooks/useExpense';
 import { toast } from 'sonner';
 import type { Category } from '@/types/income';
 import { IconPicker } from '@/components/ui/IconPicker';
@@ -65,8 +66,11 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     deleteCategory
   } = useCategory();
 
-  // Use income hook for transaction creation
-  const { create: createIncome, loading: savingTransaction } = useIncome();
+  // Use income and expense hooks for transaction creation
+  const { create: createIncome, loading: savingIncome } = useIncome();
+  const { create: createExpense, loading: savingExpense } = useExpense();
+  
+  const savingTransaction = savingIncome || savingExpense;
 
   // Fetch all categories when category tab is active
   useEffect(() => {
@@ -155,8 +159,13 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         catatan: notes.trim() || undefined,
       };
 
-      // Create transaction
-      const result = await createIncome(transactionData);
+      // Create transaction based on type
+      let result;
+      if (type === 'income') {
+        result = await createIncome(transactionData);
+      } else {
+        result = await createExpense(transactionData);
+      }
 
       if (result) {
         toast.success(`${type === 'income' ? 'Pemasukan' : 'Pengeluaran'} berhasil ditambahkan!`);

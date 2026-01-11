@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-// import { useExpense } from '@/hooks/useExpense';
+import { useExpense } from '@/hooks/useExpense';
 import { formatCurrency } from '@/utils/format';
 import { IncomeTable, IncomeMonthFilter } from '@/components/income';
 
@@ -26,7 +26,10 @@ export default function TransaksiPengeluaranPage() {
       const transactionYear = date.getFullYear();
       const transactionMonth = date.getMonth() + 1;
 
+      // Filter by year
       if (transactionYear !== selectedYear) return false;
+
+      // Filter by month if selected
       if (selectedMonth !== null && transactionMonth !== selectedMonth) return false;
 
       return true;
@@ -50,7 +53,7 @@ export default function TransaksiPengeluaranPage() {
           <ArrowLeft size={20} />
           <span>Kembali</span>
         </button>
-        <h1 className="page-title">Transaksi Pengeluaran</h1>
+        <h1 className="page-title">Daftar Pengeluaran</h1>
       </div>
 
       {/* Summary Card */}
@@ -119,11 +122,11 @@ export default function TransaksiPengeluaranPage() {
           background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
           border-radius: var(--radius-2xl);
           padding: var(--space-6);
+          color: white;
           margin-bottom: var(--space-6);
           display: flex;
           align-items: center;
           gap: var(--space-4);
-          color: white;
           box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
         }
 
